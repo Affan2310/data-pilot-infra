@@ -56,6 +56,30 @@ DataSciPilot is a comprehensive data science platform built with Streamlit that 
    - Historical analysis session management
    - Dataset versioning and retrieval capabilities
 
+7. **Computer Vision Analyzer** (`utils/computer_vision.py`)
+   - Advanced image analysis for defect detection
+   - Quality assessment using OpenCV techniques
+   - Automated anomaly detection and scoring
+   - Batch image processing capabilities
+
+8. **Advanced Feature Engineer** (`utils/feature_engineering.py`)
+   - Automated feature generation and selection
+   - Polynomial and interaction feature creation
+   - Intelligent categorical encoding and missing value handling
+   - PCA dimensionality reduction and feature importance scoring
+
+9. **Time Series Analyzer** (`utils/time_series_analyzer.py`)
+   - Comprehensive time series analysis with trend detection
+   - Seasonal decomposition and stationarity testing
+   - ARIMA and exponential smoothing forecasting
+   - Anomaly detection and autocorrelation analysis
+
+10. **Collaboration Manager** (`utils/collaboration_features.py`)
+    - Team project management and member coordination
+    - Shared insight creation and commenting system
+    - Activity tracking and collaboration analytics
+    - Project reporting and team performance metrics
+
 ## Data Flow
 
 1. **Data Upload**: Users upload CSV/Excel files through Streamlit interface
@@ -108,4 +132,8 @@ Changelog:
 - June 30, 2025: Integrated OpenAI API for AI-powered insights functionality
 - June 30, 2025: Added PostgreSQL database integration for persistent storage
 - June 30, 2025: Implemented database history page with dataset management features
-- June 30, 2025: Application successfully running on port 5000, ready for portfolio demos
+- June 30, 2025: Added Computer Vision module for image defect detection using OpenCV
+- June 30, 2025: Implemented Advanced Feature Engineering with automated feature generation
+- June 30, 2025: Added Time Series Analysis with forecasting and trend detection capabilities
+- June 30, 2025: Integrated Team Collaboration features for project management
+- June 30, 2025: Application successfully running on port 5000 with all advanced features ready
