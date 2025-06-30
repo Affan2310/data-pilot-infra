@@ -96,4 +96,7 @@ Preferred communication style: Simple, everyday language.
 ## Changelog
 
 Changelog:
-- June 30, 2025. Initial setup
+- June 30, 2025: Initial setup and complete DataSciPilot application deployment
+- June 30, 2025: Configured all dependencies in pyproject.toml (modern Python standard)
+- June 30, 2025: Integrated OpenAI API for AI-powered insights functionality
+- June 30, 2025: Application successfully running on port 5000, ready for portfolio demos
