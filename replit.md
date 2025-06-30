@@ -15,6 +15,7 @@ DataSciPilot is a comprehensive data science platform built with Streamlit that 
 ### Backend Architecture
 - **Modular Design**: Utility-based architecture with separate modules for different functionalities
 - **Session Management**: Stateful design using Streamlit's session state to persist user data
+- **Database Integration**: PostgreSQL database for persistent storage of datasets and analysis results
 - **Processing Pipeline**: Sequential workflow from data upload → profiling → EDA → ML → insights → reporting
 
 ### Key Components
@@ -48,6 +49,12 @@ DataSciPilot is a comprehensive data science platform built with Streamlit that 
    - Comprehensive report generation in multiple formats
    - Structured output with timestamps and metadata
    - Integration of all analysis components into unified reports
+
+6. **Database Manager** (`utils/database_manager.py`)
+   - PostgreSQL database integration for persistent storage
+   - Dataset metadata and analysis results tracking
+   - Historical analysis session management
+   - Dataset versioning and retrieval capabilities
 
 ## Data Flow
 
@@ -99,4 +106,6 @@ Changelog:
 - June 30, 2025: Initial setup and complete DataSciPilot application deployment
 - June 30, 2025: Configured all dependencies in pyproject.toml (modern Python standard)
 - June 30, 2025: Integrated OpenAI API for AI-powered insights functionality
+- June 30, 2025: Added PostgreSQL database integration for persistent storage
+- June 30, 2025: Implemented database history page with dataset management features
 - June 30, 2025: Application successfully running on port 5000, ready for portfolio demos

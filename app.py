@@ -14,6 +14,7 @@ from utils.eda_generator import EDAGenerator
 from utils.ml_builder import MLBuilder
 from utils.nlp_insights import NLPInsights
 from utils.report_generator import ReportGenerator
+from utils.database_manager import DatabaseManager
 
 # Configure page
 st.set_page_config(
@@ -40,7 +41,7 @@ def main():
     st.sidebar.title("Navigation")
     page = st.sidebar.selectbox(
         "Choose a section:",
-        ["Data Upload", "Data Profiling", "EDA & Visualization", "ML Model Building", "AI Insights", "Download Reports"]
+        ["Data Upload", "Data Profiling", "EDA & Visualization", "ML Model Building", "AI Insights", "Download Reports", "Database History"]
     )
     
     # Initialize utility classes
@@ -49,6 +50,13 @@ def main():
     ml_builder = MLBuilder()
     nlp_insights = NLPInsights()
     report_generator = ReportGenerator()
+    
+    # Initialize database manager
+    try:
+        db_manager = DatabaseManager()
+    except Exception as e:
+        st.error(f"Database connection failed: {e}")
+        db_manager = None
     
     if page == "Data Upload":
         data_upload_page(data_profiler)
@@ -62,6 +70,8 @@ def main():
         ai_insights_page(nlp_insights)
     elif page == "Download Reports":
         download_page(report_generator)
+    elif page == "Database History":
+        database_history_page(db_manager)
 
 def data_upload_page(data_profiler):
     st.header("📁 Data Upload")
@@ -392,6 +402,168 @@ def ai_insights_page(nlp_insights):
                 st.write(custom_insight)
             except Exception as e:
                 st.error(f"Error generating custom insight: {str(e)}")
+
+def database_history_page(db_manager):
+    st.header("🗄️ Database History")
+    
+    if not db_manager:
+        st.error("Database connection not available.")
+        return
+    
+    try:
+        # Database statistics
+        st.subheader("📊 Database Statistics")
+        stats = db_manager.get_database_stats()
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Total Datasets", stats['total_datasets'])
+        with col2:
+            st.metric("Total Analyses", stats['total_analyses'])
+        with col3:
+            st.metric("Datasets Today", stats['datasets_today'])
+        with col4:
+            st.metric("Analyses Today", stats['analyses_today'])
+        
+        st.markdown("---")
+        
+        # Dataset history
+        st.subheader("📁 Dataset History")
+        
+        if st.button("Refresh History"):
+            st.rerun()
+        
+        history = db_manager.get_datasets_history()
+        
+        if not history:
+            st.info("No datasets found in database. Upload and analyze data to see history here.")
+            return
+        
+        # Display datasets in a table
+        history_df = pd.DataFrame(history)
+        
+        # Format the dataframe for better display
+        if 'upload_timestamp' in history_df.columns:
+            history_df['upload_timestamp'] = pd.to_datetime(history_df['upload_timestamp']).dt.strftime('%Y-%m-%d %H:%M')
+        
+        # Add status indicators
+        status_indicators = []
+        for _, row in history_df.iterrows():
+            status = []
+            if row.get('has_profiling', False):
+                status.append("📊")
+            if row.get('has_ml_results', False):
+                status.append("🤖")
+            if row.get('has_ai_insights', False):
+                status.append("🧠")
+            status_indicators.append(" ".join(status) if status else "❌")
+        
+        history_df['Analysis Status'] = status_indicators
+        
+        # Select columns for display
+        display_cols = ['id', 'name', 'upload_timestamp', 'rows', 'columns', 'file_type', 'Analysis Status']
+        display_df = history_df[display_cols].copy()
+        display_df.columns = ['ID', 'Dataset Name', 'Upload Time', 'Rows', 'Columns', 'Type', 'Analysis Status']
+        
+        st.dataframe(display_df, use_container_width=True)
+        
+        # Dataset details section
+        st.subheader("🔍 Dataset Details")
+        
+        if len(history) > 0:
+            dataset_names = [f"{row['id']} - {row['name']}" for row in history]
+            selected_dataset = st.selectbox("Select dataset for details:", ["Select a dataset..."] + dataset_names)
+            
+            if selected_dataset != "Select a dataset...":
+                dataset_id = int(selected_dataset.split(" - ")[0])
+                
+                # Load dataset details
+                with st.spinner("Loading dataset details..."):
+                    details = db_manager.get_dataset_details(dataset_id)
+                    
+                    if details:
+                        col1, col2 = st.columns([2, 1])
+                        
+                        with col1:
+                            st.write(f"**Dataset:** {details['name']}")
+                            st.write(f"**Upload Time:** {details['upload_timestamp']}")
+                            st.write(f"**Dimensions:** {details['rows']} rows × {details['columns']} columns")
+                            st.write(f"**File Type:** {details['file_type']}")
+                            st.write(f"**Memory Usage:** {details['memory_usage_mb']:.2f} MB")
+                            st.write(f"**Missing Data:** {details['missing_percentage']:.1f}%")
+                            st.write(f"**Duplicates:** {details['duplicates']}")
+                        
+                        with col2:
+                            # Load dataset from database
+                            if st.button("Load Dataset", key=f"load_{dataset_id}"):
+                                with st.spinner("Loading dataset from database..."):
+                                    df = db_manager.load_dataset_from_db(dataset_id)
+                                    if df is not None:
+                                        st.session_state.data = df
+                                        st.success("Dataset loaded successfully!")
+                                        st.dataframe(df.head())
+                                    else:
+                                        st.error("Failed to load dataset from database.")
+                            
+                            # Delete dataset
+                            if st.button("🗑️ Delete Dataset", key=f"delete_{dataset_id}"):
+                                if st.session_state.get(f'confirm_delete_{dataset_id}', False):
+                                    with st.spinner("Deleting dataset..."):
+                                        if db_manager.delete_dataset(dataset_id):
+                                            st.success("Dataset deleted successfully!")
+                                            st.rerun()
+                                        else:
+                                            st.error("Failed to delete dataset.")
+                                else:
+                                    st.session_state[f'confirm_delete_{dataset_id}'] = True
+                                    st.warning("Click again to confirm deletion.")
+                        
+                        # Show analysis results if available
+                        if details.get('profile_results'):
+                            with st.expander("📊 Profiling Results"):
+                                st.json(details['profile_results'])
+                        
+                        if details.get('ml_results'):
+                            with st.expander("🤖 ML Results"):
+                                st.json(details['ml_results'])
+                        
+                        if details.get('ai_insights'):
+                            with st.expander("🧠 AI Insights"):
+                                st.write(details['ai_insights'])
+                    
+                    else:
+                        st.error("Dataset details not found.")
+        
+        # Save current dataset to database
+        st.markdown("---")
+        st.subheader("💾 Save Current Dataset")
+        
+        if st.session_state.data is not None:
+            dataset_name = st.text_input("Dataset name:", value="My Dataset")
+            
+            if st.button("Save to Database"):
+                if dataset_name.strip():
+                    with st.spinner("Saving dataset to database..."):
+                        try:
+                            dataset_id = db_manager.save_dataset(dataset_name, st.session_state.data)
+                            
+                            # Save analysis results if available
+                            if st.session_state.profiling_results:
+                                db_manager.update_dataset_analysis(dataset_id, 'profiling', st.session_state.profiling_results)
+                            
+                            if st.session_state.ml_results:
+                                db_manager.update_dataset_analysis(dataset_id, 'ml', st.session_state.ml_results)
+                            
+                            st.success(f"Dataset saved successfully! Database ID: {dataset_id}")
+                        except Exception as e:
+                            st.error(f"Error saving dataset: {e}")
+                else:
+                    st.error("Please enter a dataset name.")
+        else:
+            st.info("No dataset loaded. Upload data first to save to database.")
+    
+    except Exception as e:
+        st.error(f"Database error: {e}")
 
 def download_page(report_generator):
     st.header("📥 Download Reports")
