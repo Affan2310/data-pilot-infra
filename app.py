@@ -290,8 +290,152 @@ def download_page(report_generator):
         st.download_button("Download JSON Report", json.dumps(report, indent=2), "report.json", "application/json")
 
 def collaboration_page(collaboration_manager):
-    st.header("👥 Collaboration Features (Demo)")
-    st.write("Collaboration tools placeholder.")
+    st.header("👥 Team Collaboration")
+    st.markdown("Manage collaborative data analysis projects and share insights with your team.")
+    
+    # Project management section
+    st.subheader("Project Management")
+    
+    tab1, tab2, tab3 = st.tabs(["Create Project", "Manage Projects", "Team Analytics"])
+    
+    with tab1:
+        st.write("Create a new collaborative project")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            project_name = st.text_input("Project Name")
+            created_by = st.text_input("Your Name")
+        
+        with col2:
+            description = st.text_area("Project Description")
+            dataset_id = None
+            if st.session_state.data is not None:
+                use_current_dataset = st.checkbox("Use current dataset for this project")
+                if use_current_dataset:
+                    dataset_id = 1  # Simplified for demo
+        
+        if st.button("Create Project") and project_name and created_by:
+            result = collaboration_manager.create_project(project_name, description, created_by, dataset_id)
+            
+            if result['success']:
+                st.success(f"Project '{project_name}' created successfully!")
+                st.write(f"Project ID: {result['project_id']}")
+            else:
+                st.error(result['error'])
+    
+    with tab2:
+        st.write("Manage existing projects")
+        
+        # Demo project for display
+        demo_project_id = "demo123"
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            project_id = st.text_input("Project ID", value=demo_project_id)
+            member_name = st.text_input("Team Member Name")
+        
+        with col2:
+            permission_level = st.selectbox("Permission Level", ["viewer", "contributor", "admin"])
+        
+        if st.button("Add Team Member") and project_id and member_name:
+            result = collaboration_manager.add_team_member(project_id, member_name, permission_level)
+            
+            if result['success']:
+                st.success(result['message'])
+            else:
+                st.error(result['error'])
+        
+        # Share insights section
+        st.subheader("Share Insights")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            insight_title = st.text_input("Insight Title")
+            user_name = st.text_input("Your Name", key="insight_user")
+        
+        with col2:
+            insight_type = st.selectbox("Insight Type", ["general", "data_quality", "pattern", "recommendation"])
+            insight_content = st.text_area("Insight Content")
+        
+        if st.button("Share Insight") and project_id and insight_title and insight_content:
+            result = collaboration_manager.share_insight(project_id, user_name, insight_title, insight_content, insight_type)
+            
+            if result['success']:
+                st.success(result['message'])
+            else:
+                st.error(result['error'])
+    
+    with tab3:
+        st.write("Team analytics and project overview")
+        
+        project_id_analytics = st.text_input("Project ID for Analytics", value="demo123")
+        
+        if st.button("Generate Analytics") and project_id_analytics:
+            # Get project summary
+            summary = collaboration_manager.get_project_summary(project_id_analytics)
+            
+            if 'error' not in summary:
+                st.subheader("Project Overview")
+                
+                # Project info
+                proj_info = summary['project_info']
+                st.write(f"**Project:** {proj_info['name']}")
+                st.write(f"**Created by:** {proj_info['created_by']}")
+                st.write(f"**Status:** {proj_info['status']}")
+                
+                # Statistics
+                stats = summary['statistics']
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric("Team Size", stats['team_size'])
+                with col2:
+                    st.metric("Total Analyses", stats['total_analyses'])
+                with col3:
+                    st.metric("Shared Insights", stats['total_insights'])
+                
+                # Team members
+                if summary['team_members']:
+                    st.subheader("Team Members")
+                    for member in summary['team_members']:
+                        st.write(f"- {member}")
+                
+                # Top contributors
+                if summary['top_contributors']:
+                    st.subheader("Top Contributors")
+                    for contributor, count in summary['top_contributors']:
+                        st.write(f"- {contributor}: {count} analyses")
+            
+            else:
+                st.warning("Project not found or no data available for analytics")
+    
+    # Sample collaboration features demo
+    st.subheader("Collaboration Features Demo")
+    
+    with st.expander("View Sample Team Dashboard"):
+        st.write("**Sample Project: Market Analysis Team**")
+        
+        # Mock data for demonstration
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Active Projects", "3")
+        with col2:
+            st.metric("Team Members", "5")
+        with col3:
+            st.metric("Analyses This Week", "12")
+        with col4:
+            st.metric("Collaboration Score", "85/100")
+        
+        st.write("**Recent Activity:**")
+        st.write("- Sarah completed EDA analysis on customer data")
+        st.write("- Mike shared insights about seasonal trends")
+        st.write("- Lisa uploaded new product sales dataset")
+        st.write("- Team completed quarterly forecast model")
+        
+        st.write("**Shared Insights:**")
+        st.write("1. **Customer Segmentation Patterns** - Data shows 3 distinct customer groups")
+        st.write("2. **Seasonal Sales Trends** - Peak sales occur in Q4 with 40% increase")
+        st.write("3. **Data Quality Issues** - Missing values in 15% of transaction records")
 
 if __name__ == "__main__":
     main()
