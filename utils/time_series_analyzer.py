@@ -627,3 +627,56 @@ class TimeSeriesAnalyzer:
             
         except Exception as e:
             return {'error': f"Visualization creation failed: {str(e)}"}
+        
+    def generate_human_friendly_time_series_report(self, results: Dict[str, Any]) -> str:
+        try:
+            lines = [
+                f"📈 Time Series Analysis Report",
+                "",
+                "📅 Data Info:",
+                f"- Observations: {results['data_info'].get('total_observations')}",
+                f"- Date Range: {results['data_info']['date_range'].get('start')} to {results['data_info']['date_range'].get('end')}",
+                f"- Frequency: {results['data_info'].get('frequency')}",
+                f"- Missing Values: {results['data_info'].get('missing_values')}",
+                "",
+                "🧪 Stationarity Tests:",
+                f"- ADF Test: p={results['statistical_tests']['stationarity']['adf_test'].get('p_value'):.4f}, Stationary: {results['statistical_tests']['stationarity']['adf_test'].get('is_stationary')}",
+                f"- KPSS Test: p={results['statistical_tests']['stationarity']['kpss_test'].get('p_value'):.4f}, Stationary: {results['statistical_tests']['stationarity']['kpss_test'].get('is_stationary')}",
+                f"- Overall: {results['statistical_tests']['stationarity'].get('overall_assessment')}",
+                "",
+                "📊 Decomposition:",
+                f"- Trend Strength: {results['decomposition'].get('trend_strength'):.2f}",
+                f"- Seasonal Strength: {results['decomposition'].get('seasonal_strength'):.2f}",
+                f"- Residual Variance: {results['decomposition'].get('residual_variance'):.2f}",
+                "",
+                "📈 Trend Analysis:",
+                f"- Linear Trend: {results['trend_analysis']['linear_trend'].get('direction')} (R²={results['trend_analysis']['linear_trend'].get('r_squared'):.2f})",
+                f"- Short-term trend: {results['trend_analysis']['moving_averages'].get('short_term_trend')}",
+                f"- Long-term trend: {results['trend_analysis']['moving_averages'].get('long_term_trend')}",
+                "",
+                "🔮 Forecasting:",
+                f"- Recommended Model: {results['forecasting'].get('recommended_model')}",
+                f"- First forecasted value: {results['forecasting']['best_forecast'][0]:.2f}",
+                "",
+                "📌 Anomaly Detection:",
+                f"- Has anomalies: {results['anomaly_detection']['anomaly_summary'].get('has_anomalies')}",
+                f"- Severity: {results['anomaly_detection']['anomaly_summary'].get('severity')}",
+                "",
+                "📈 Basic Statistics:",
+                f"- Mean: {results['basic_statistics'].get('mean')}",
+                f"- Std Dev: {results['basic_statistics'].get('std'):.2f}",
+                f"- Min: {results['basic_statistics'].get('min')}",
+                f"- Max: {results['basic_statistics'].get('max')}",
+                f"- Coeff of Variation: {results['basic_statistics'].get('coefficient_of_variation'):.3f}",
+                "",
+                "🔗 Autocorrelation:",
+                f"- Max autocorr: {results['autocorrelation'].get('max_autocorr'):.2f}",
+                f"- Ljung-Box p-value: {results['autocorrelation']['ljung_box_test'].get('p_value'):.2e}",
+                "",
+                "💡 Insights:"
+            ]
+            for insight in results.get('insights', []):
+                lines.append(f"✅ {insight}")
+            return '\n'.join(lines)
+        except Exception as e:
+            return f"Error generating time series report: {str(e)}"

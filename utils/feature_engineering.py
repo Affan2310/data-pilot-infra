@@ -413,3 +413,30 @@ class AdvancedFeatureEngineer:
                 'mean': np.mean(list(importance_scores.values()))
             }
         }
+    
+    def generate_human_friendly_feature_report(self, results: Dict[str, Any]) -> str:
+        try:
+            lines = [
+                "⚙️ Feature Engineering Report",
+                "",
+                f"- Original features: {results.get('original_features')}",
+                f"- Final features after engineering: {results.get('final_features')}",
+                f"- Total generated features: {results['transformation_summary'].get('total_generated_features')}",
+                f"- Feature expansion ratio: {results['transformation_summary'].get('feature_expansion_ratio'):.2f}",
+                f"- Recommended for modeling: {results['transformation_summary'].get('recommended_for_modeling')}",
+                "",
+                "🛠 Engineered Feature Types:",
+                f"  • Interaction: {results['engineered_features'].get('interactions', 0)}",
+                f"  • Polynomial: {results['engineered_features'].get('polynomial', 0)}",
+                f"  • Statistical: {results['engineered_features'].get('statistical', 0)}",
+                f"  • Temporal: {results['engineered_features'].get('temporal', 0)}",
+                f"  • Categorical: {results['engineered_features'].get('categorical', 0)}",
+                f"  • PCA: {results['engineered_features'].get('pca', 0)}",
+                "",
+                "💡 Recommendations:"
+            ]
+            for rec in results.get('recommendations', []):
+                lines.append(f"✅ {rec}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error generating feature report: {str(e)}"

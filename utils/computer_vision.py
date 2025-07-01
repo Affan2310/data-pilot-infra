@@ -463,3 +463,40 @@ class ComputerVisionAnalyzer:
             
         except Exception as e:
             return image_data  # Return original if annotation fails
+        
+    def generate_human_friendly_report(self, results: Dict[str, Any]) -> str:
+        try:
+            lines = [
+                f"📄 Defect Analysis Report for `{results.get('filename', 'Unknown')}`",
+                "",
+                "🖼 Image Properties:",
+                f"- Width: {results['image_properties'].get('width')} px",
+                f"- Height: {results['image_properties'].get('height')} px",
+                f"- Channels: {results['image_properties'].get('channels')}",
+                f"- Total Pixels: {results['image_properties'].get('total_pixels')}",
+                "",
+                "⚙️ Defect Analysis:",
+                f"- Edge Density: {results['defect_analysis'].get('edge_density'):.3f}",
+                f"- Edge Interpretation: {results['defect_analysis'].get('edge_interpretation')}",
+                f"- Total Contours: {results['defect_analysis']['contour_analysis'].get('total_contours')}",
+                f"- Large Contours: {results['defect_analysis']['contour_analysis'].get('large_contours')}",
+                f"- Avg Contour Area: {results['defect_analysis']['contour_analysis'].get('average_contour_area'):.2f}",
+                f"- Potential Discoloration: {results['defect_analysis']['color_analysis'].get('potential_discoloration')}",
+                "",
+                "🌞 Quality Metrics:",
+                f"- Brightness: {results['quality_metrics'].get('mean_brightness'):.2f} ({results['quality_metrics'].get('brightness_quality')})",
+                f"- Contrast: {results['quality_metrics'].get('contrast_quality')}",
+                f"- Noise Level: {results['quality_metrics']['noise_level'].get('noise_level')}",
+                f"- Blur: {results['quality_metrics']['blur_score'].get('blur_assessment')}",
+                "",
+                "🚨 Anomaly Detection:",
+                f"- Defect Score: {results['anomaly_detection'].get('overall_defect_score')}",
+                f"- Classification: {results['anomaly_detection'].get('classification')}",
+                "",
+                "💡 Recommendations:"
+            ]
+            for rec in results.get('recommendations', []):
+                lines.append(f"✅ {rec}")
+            return '\n'.join(lines)
+        except Exception as e:
+            return f"Error generating report: {str(e)}"

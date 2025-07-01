@@ -11,6 +11,13 @@ from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score, roc_auc_score,
     mean_squared_error, mean_absolute_error, r2_score
 )
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.svm import SVC, SVR
+from xgboost import XGBClassifier, XGBRegressor
+from sklearn.metrics import accuracy_score, mean_squared_error
+import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 import warnings
@@ -24,79 +31,78 @@ class MLBuilder:
         self.results = {}
         self.preprocessor = None
         
-    def build_models(self, df: pd.DataFrame, target_col: str, 
-                    feature_cols: list, problem_type: str) -> dict:
-        """
-        Build and evaluate multiple ML models automatically.
-        
-        Args:
-            df: Input dataframe
-            target_col: Target variable column name
-            feature_cols: List of feature column names
-            problem_type: 'classification' or 'regression'
-            
-        Returns:
-            Dictionary containing model performance results
-        """
+    def build_models(self, df, target_col, features=[], problem_type='classification'):
         try:
-            # Prepare data
-            X, y = self._prepare_data(df, target_col, feature_cols, problem_type)
-            
-            # Split data
+            X = df[features] if features else df.drop(columns=[target_col])
+            y = df[target_col]
+
+            # Handle stratify for classification safely
+            stratify = None
+            if problem_type == 'classification':
+                class_counts = y.value_counts()
+                if class_counts.min() >= 2:
+                    stratify = y
+
             X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=0.2, random_state=42, stratify=y if problem_type == 'classification' else None
+                X, y, test_size=0.2, random_state=42, stratify=stratify
             )
-            
-            # Get models based on problem type
-            models = self._get_models(problem_type)
-            
-            # Train and evaluate models
+
+            models = []
+            if problem_type == 'classification':
+                models = [
+                    ('Logistic Regression', LogisticRegression(max_iter=1000)),
+                    ('Random Forest Classifier', RandomForestClassifier()),
+                    ('SVM Classifier', SVC()),
+                    ('XGBoost Classifier', XGBClassifier(eval_metric='logloss', use_label_encoder=False))
+                ]
+                metric_name = 'accuracy'
+            else:
+                models = [
+                    ('Linear Regression', LinearRegression()),
+                    ('Random Forest Regressor', RandomForestRegressor()),
+                    ('SVR', SVR()),
+                    ('XGBoost Regressor', XGBRegressor())
+                ]
+                metric_name = 'rmse'
+
             results = []
-            feature_importance = {}
-            
-            for name, model in models.items():
-                try:
-                    # Create preprocessing pipeline
-                    pipeline = self._create_pipeline(X, model)
-                    
-                    # Train model
-                    pipeline.fit(X_train, y_train)
-                    
-                    # Make predictions
-                    y_pred = pipeline.predict(X_test)
-                    
-                    # Calculate metrics
-                    metrics = self._calculate_metrics(y_test, y_pred, problem_type)
-                    metrics['Model'] = name
-                    results.append(metrics)
-                    
-                    # Extract feature importance if available
-                    if hasattr(pipeline.named_steps['model'], 'feature_importances_'):
-                        importance = pipeline.named_steps['model'].feature_importances_
-                        feature_names = self._get_feature_names(X)
-                        feature_importance[name] = dict(zip(feature_names, importance))
-                    
-                except Exception as e:
-                    print(f"Error training {name}: {str(e)}")
-                    continue
-            
-            # Prepare return results
-            return_results = {
-                'model_performance': results,
-                'problem_type': problem_type,
-                'target_column': target_col,
-                'feature_columns': feature_cols,
-                'data_shape': df.shape,
-                'test_size': len(X_test)
+            for name, model in models:
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
+
+                if problem_type == 'classification':
+                    score = accuracy_score(y_test, y_pred)
+                    cv_score = cross_val_score(model, X, y, cv=5, scoring='accuracy').mean()
+                else:
+                    score = mean_squared_error(y_test, y_pred, squared=False)
+                    cv_score = -cross_val_score(model, X, y, cv=5, scoring='neg_root_mean_squared_error').mean()
+
+                importance = None
+                if hasattr(model, 'feature_importances_'):
+                    importance = dict(zip(X.columns, model.feature_importances_))
+                elif hasattr(model, 'coef_'):
+                    coef = model.coef_
+                    if coef.ndim > 1:
+                        coef = coef[0]
+                    importance = dict(zip(X.columns, coef))
+
+                results.append({
+                    'model_name': name,
+                    'test_score': score,
+                    'cv_score': cv_score,
+                    'feature_importance': importance
+                })
+
+            best_model = max(results, key=lambda x: x['cv_score']) if problem_type == 'classification' \
+                         else min(results, key=lambda x: x['cv_score'])
+
+            return {
+                'best_model': best_model,
+                'all_results': results
             }
-            
-            if feature_importance:
-                return_results['feature_importance'] = feature_importance[list(feature_importance.keys())[0]]
-            
-            return return_results
-            
+
         except Exception as e:
-            raise Exception(f"Error in model building: {str(e)}")
+            return {'error': f"Model building failed: {str(e)}"}
     
     def _prepare_data(self, df: pd.DataFrame, target_col: str, 
                      feature_cols: list, problem_type: str) -> tuple:

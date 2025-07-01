@@ -1,0 +1,30 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+.uv/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Streamlit temp files
+.streamlit/config.toml
+
+# Environment
+.env
+
+# Jupyter / IPython
+.ipynb_checkpoints/
+

@@ -160,3 +160,54 @@ class DataProfiler:
             suggestions.append("Consider memory optimization for large dataset")
         
         return suggestions if suggestions else ["Data appears to be in good quality!"]
+    
+    def generate_human_friendly_report(self, profile: Dict[str, Any]) -> str:
+        """Create a human-friendly summary text for data profiling results."""
+        try:
+            lines = []
+            lines.append("📄 Data Profiling Summary")
+            lines.append(f"📅 Timestamp: {profile.get('timestamp')}")
+            lines.append(f"📊 Shape: {profile.get('shape')[0]} rows × {profile.get('shape')[1]} columns")
+            lines.append(f"💾 Memory usage: {profile.get('memory_usage')} bytes")
+            lines.append(f"🔍 Missing values: {profile.get('missing_percentage'):.2f}%")
+            lines.append(f"📑 Duplicate rows: {profile.get('duplicates')}")
+            lines.append("")
+            
+            # Data types
+            lines.append("📂 Column Data Types:")
+            for col, dtype in profile.get('dtypes', {}).items():
+                lines.append(f"  - {col}: {dtype}")
+            lines.append("")
+            
+            # Numeric summary
+            lines.append("📈 Numeric Columns Summary:")
+            for col, stats in profile.get('numeric_summary', {}).items():
+                lines.append(f"  • {col}: Mean {stats.get('mean'):.2f}, Std {stats.get('std'):.2f}, Min {stats.get('min')}, Max {stats.get('max')}")
+            lines.append("")
+            
+            # Categorical summary
+            lines.append("🏷️ Categorical Columns Summary:")
+            for col, stats in profile.get('categorical_summary', {}).items():
+                lines.append(f"  • {col}: {stats.get('unique_values')} unique values (Most frequent: {stats.get('most_frequent')})")
+            lines.append("")
+            
+            # Quality issues
+            issues = profile.get('quality_issues', {})
+            lines.append("⚠️ Quality Issues:")
+            for issue, cols in issues.items():
+                if cols:
+                    lines.append(f"  - {issue.replace('_', ' ').capitalize()}: {', '.join(cols)}")
+            if not any(issues.values()):
+                lines.append("  - No significant issues detected.")
+            lines.append("")
+            
+            # Cleaning suggestions
+            lines.append("🛠 Cleaning Suggestions:")
+            for suggestion in profile.get('cleaning_suggestions', []):
+                lines.append(f"✅ {suggestion}")
+
+            return "\n".join(lines)
+
+        except Exception as e:
+            return f"Error generating human-friendly report: {str(e)}"
+
