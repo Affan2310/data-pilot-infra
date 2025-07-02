@@ -39,7 +39,7 @@ With DataSciPilot, you can **profile data**, **build ML models**, **perform EDA*
 - Annotated output images  
 
 ✅ **Downloadable Reports**
-- Profiling, EDA, ML, Time Series reports  
+- Profiling, EDA, ML, Time Series reports. 
 
 ---
 
